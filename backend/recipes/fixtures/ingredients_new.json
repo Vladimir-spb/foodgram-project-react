@@ -1,0 +1,18 @@
+[
+  {
+    "model": "recipes.ingredient",
+    "pk": null,
+    "fields": {
+      "name": "амброзия",
+      "measurement_unit": "мл"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": null,
+    "fields": {
+      "name": "омела",
+      "measurement_unit": "г"
+    }
+  }
+]
