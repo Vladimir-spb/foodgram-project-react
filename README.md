@@ -1,6 +1,6 @@
 # Foodgram
 ## Приложение «Продуктовый помощник»
-[![Foodgram](https://github.com/Vladimir-spb/foodgram-project-react/workflows/Foodgram-workflow/badge.svg)](https://github.com/Oorzhakau/foodgram-project-react/actions/workflows/foodgram_workflow.yml)
+[![Django-app workflow](https://github.com/Vladimir-spb/foodgram-project-react/actions/workflows/yamdb_workflow.yml/badge.svg)](https://github.com/Vladimir-spb/foodgram-project-react/actions/workflows/yamdb_workflown.yml)
 [![Python](https://img.shields.io/badge/-Python-464646?style=flat&logo=Python&logoColor=56C0C0&color=008080)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/-Django-464646?style=flat&logo=Django&logoColor=56C0C0&color=008080)](https://www.djangoproject.com/)
 [![Django REST Framework](https://img.shields.io/badge/-Django%20REST%20Framework-464646?style=flat&logo=Django%20REST%20Framework&logoColor=56C0C0&color=008080)](https://www.django-rest-framework.org/)
@@ -33,16 +33,9 @@ http://158.160.12.99
 
 ## Техническое описание проекта
 
-К проекту по адресу http://localhost/api/docs/ подключена документация **API**.
-В ней описаны возможные запросы к API и структура ожидаемых ответов.
-Для каждого запроса указаны уровни прав доступа: пользовательские роли, которым разрешён запрос.
+В проекте реализован _**API**_-**сервис** для аутентификации пользователей и работы со всеми ресурсами.
 
-## Технологии:
-* Python 3.7
-* Django 2
-* Docker
-* Nginx
-* Github Action
+Увидеть полную спецификацию API вы сможете развернув проект локально http://127.0.0.1/api/docs/ или на вашем хосте.
 
 ## Описание Workflow
 
@@ -54,72 +47,87 @@ Workflow состоит из четырёх шагов:
 
 ## Установка:
 1. Клонируйте репозиторий на локальную машину.
-   ```https://github.com/Oorzhakau/foodgram-project-react.git```
+   ```https://github.com/Vladimir-spb/foodgram-project-react```
 2. Установите виртуальное окружение в папке проекта.
 ```
-cd foodgram-project-react
 python -m venv venv
 ```
+
 3. Активируйте виртуальное окружение.
-   ```source venv\Scripts\activate```
+   ``` .venv\Scripts\activate```
 4. Установите зависимости.
 ```
 python -m pip install --upgrade pip
 pip install -r backend\requirements.txt
 ```
 ## Запуск проекта в контейнерах
-1. Перейдите в директорию `infra/`, заполните файл .venv_example и после этого переименуйте его в .env
-2. Выполните команду:
+1. Выполните команду:
    ```docker-compose up -d --build```
-3. Для остановки контейнеров из директории `infra/` выполните команду:
+2. Для остановки контейнеров из директории `infra/` выполните команду:
    ```docker-compose down -v```
 
-## Deploy проекта на удаленный сервер
-Предварительно для автоматического деплоя необходимо подготовить сервер:
-1. Установить docker: ```sudo apt install docker.io```
-2. Установите docker-compose:
+В репозитории на Гитхабе добавьте данные в `Settings - Secrets - Actions secrets`:
 ```
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+DOCKER_USERNAME - имя пользователя в DockerHub
+DOCKER_PASSWORD - пароль пользователя в DockerHub
+HOST - ip-адрес сервера
+USER - пользователь
+SSH_KEY - приватный ssh-ключ
+PASSPHRASE - кодовая фраза для ssh-ключа
+SECRET_KEY - секретный ключ приложения django
+ALLOWED_HOSTS - список разрешённых адресов
+TELEGRAM_TO - id своего телеграм-аккаунта
+TELEGRAM_TOKEN - токен бота
+DB_NAME - postgres (по умолчанию)
+DB_ENGINE - django.db.backends.postgresql
+DB_HOST - db (по умолчанию)
+DB_PORT - 5432 (по умолчанию)
+POSTGRES_USER - postgres (по умолчанию)
+POSTGRES_PASSWORD - postgres (по умолчанию)
 ```
-3. Скопируйте файлы docker-compose.yaml и nginx.conf из `infra` проекта на сервер в
-home/<ваш_username>/docker-compose.yaml и home/<ваш_username>/nginx/default.conf соответственно (возможно с ключом -i <id_rsa>).
-```
-scp docker-compose.yml <username>@<host>:/home/<username>/docker-compose.yml
-scp nginx.conf <username>@<host>:/home/<username>/nginx.conf
-```
-4. В Secrets GitHub Actions форкнутого репозитория добавить переменные окружения:
-   * SSH_KEY - ssh private key для доступа к удаленному серверу
-   * HOST - public id хоста
-   * USER - имя user-а на удаленном сервере
-   * PASSPHRASE - пароль подтверждения подключения по ssh-key
-   * DOCKER_USERNAME - username на DockerHub
-   * DOCKER_PASSWORD - пароль на DockerHub
-   * POSTGRES_USER - имя пользователя для базы данных
-   * POSTGRES_PASSWORD - пароль для подключения к базе
-   * DB_ENGINE - настойка подключения django-проекта к postgresql
-   * DB_NAME - имя базы данных
-   * DB_HOST - название сервиса (контейнера)
-   * DB_PORT - порт для подключения к БД
-   * DJANGO_SU_ADMIN - имя суперюзера в django-проекте
-   * DJANGO_SU_EMAIL - почта суперюзера в django-проекте
-   * DJANGO_SU_PASSWORD - пароль суперюзера в django-проекте
-   * TELEGRAM_TOKEN - token telegram-бота
-   * TELEGRAM_TO - id пользователя, которому будут приходить оповещения
-об успешном деплои
 
-## Ссылка на проект
-Проект развернут по адресу http://oo-foodgram.ddns.net/ или http://51.250.29.63/
+### Подготовка сервера
 
-User администратора
-
+Остановите службу nginx:
 ```
-username: admin
-
-email admin: admin@mail.com
-
-password: qwerty_1234
+sudo systemctl stop nginx 
 ```
+Установите docker и docker-compose:
+```
+sudo apt install docker.io
+sudo apt install curl
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh 
+sudo apt install \
+  apt-transport-https \
+  ca-certificates \
+  curl \
+  gnupg-agent \
+  software-properties-common -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" 
+sudo apt install docker-ce docker-compose -y
+```
+Community Edition (CE) — бесплатная и общедоступная версия - Она идеально подходит для решения базовых задач по контейнеризации
+
+Скопируйте файлы docker-compose.yaml и nginx.conf из вашего проекта на сервер в home/<ваш_username>/
+
+### После успешного деплоя последовательно выполнить:
+
+ a) sudo docker-compose exec backend python manage.py makemigrations
+ b) sudo docker-compose exec backend python manage.py migrate
+ c) sudo docker-compose exec backend python manage.py createsuperuser
+ d) sudo docker-compose exec backend python manage.py collectstatic --no-input
+
+### Загрузка ингредиентов из CSV- файла:
+sudo docker-compose exec backend python manage.py loading_ingredients
+
+### Работа с fixture:
+## Для создания дампа (резервной копии) необходимо выполнить команду: 
+- docker-compose exec backend python manage.py dumpdata > fixtures.json
+## Для загрузки:
+- docker-compose exec backend python manage.py loaddata fixtures.json
+
 
 ## Автор:
-[Александр Ооржак](https://github.com/Oorzhakau)
+Коршак Владимир
