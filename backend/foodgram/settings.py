@@ -6,9 +6,7 @@ load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-SECRET_KEY = os.getenv('SECRET_KEY', default='n8!kf4w8p)db$iwhxrq4y5c#*z57vx#i89qdz-9m(yxu#d6bxp')
-# SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = 'n8!kf4w8p)db$iwhxrq4y5c#*z57vx#i89qdz-9m(yxu#d6bxp'
 
 DEBUG = False
 
@@ -75,16 +73,6 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',
-#         'USER': 'postgres',
-#         'PASSWORD': 'postgres',
-#         'HOST': 'db',
-#         'PORT': 5432
-#     }
-# }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
