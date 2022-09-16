@@ -67,8 +67,8 @@ jobs:
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/foodgram_backend
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend
           sudo docker-compose stop
-          sudo docker-compose rm backend
-          sudo docker-compose rm frontend
+          sudo docker-compose rm foodgram_backend
+          sudo docker-compose rm foodgram_frontend
           rm .env
           touch .env
           echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
@@ -89,3 +89,4 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: ${{ github.workflow }} успешно выполнен!
+
