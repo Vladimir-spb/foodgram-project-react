@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.8'
 services:
 
   db:
@@ -9,28 +9,31 @@ services:
       - ./.env
 
   backend:
-    image: martine102/foodgram_backend:latest
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
     restart: always
-    volumes:
-      - static_value:/app/static/
-      - media_value:/app/media/
     depends_on:
       - db
     env_file:
       - ./.env
+    volumes:
+      - static_value:/app/django/static/
+      - media_value:/app/django/media/
 
   frontend:
-    image: martine102/foodgram_frontend:latest
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
       - db
 
   nginx:
-    image: nginx:1.19.3
+    image: nginx:1.21.3
     ports:
       - "80:80"
-      
     volumes:
       - ./default.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
@@ -38,7 +41,9 @@ services:
       - static_value:/var/html/static/
       - media_value:/var/html/media/
     depends_on:
+      - frontend
       - backend
+
 volumes:
   static_value:
   media_value:

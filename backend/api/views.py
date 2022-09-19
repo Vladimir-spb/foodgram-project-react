@@ -74,7 +74,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 dt.datetime.utcnow().strftime('%Y-%m-%d'),
                 self.request.user.username,
             ),
-            'doc_title': 'FOODGRAM',
             'title': 'Список покупок',
             'user': 'Пользователь: %s %s'
             % (
