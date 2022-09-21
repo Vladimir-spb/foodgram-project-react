@@ -21,6 +21,7 @@ from utils.create_pdf_file import create_pdf
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    pagination_class = None
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -28,6 +29,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerialize
     filter_backends = (filters.DjangoFilterBackend, rest_filters.SearchFilter)
     filterset_class = IngredientFilter
+    pagination_class = None
     filterset_fields = ('name',)
     search_fields = ('^name',)
 

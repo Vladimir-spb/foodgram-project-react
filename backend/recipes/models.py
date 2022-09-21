@@ -44,12 +44,6 @@ class Tag(models.Model):
         ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['slug'],
-                name='unique_slug'
-            )
-        ]
 
     def __str__(self):
         return self.name
@@ -111,7 +105,7 @@ class Recipe(CreatedModel):
         verbose_name_plural = 'Рецепты'
 
     def get_absolute_url(self):
-        return f'/posts/{self.pk}/'
+        return f'/recipes/{self.pk}/'
 
     def __str__(self):
         return self.name[:15]
