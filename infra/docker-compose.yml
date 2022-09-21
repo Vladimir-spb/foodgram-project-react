@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.3'
 services:
 
   db:
@@ -31,7 +31,7 @@ services:
       - db
 
   nginx:
-    image: nginx:1.21.3
+    image: nginx:1.19.3
     ports:
       - "80:80"
     volumes:
