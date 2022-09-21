@@ -1,6 +1,6 @@
 import datetime as dt
 
-from api.filters import RecipeFilter
+from api.filters import IngredientFilter, RecipeFilter
 from api.paginations import CustomPageSizePagination
 from api.permissions import AdminOrAuthorOrReadOnly
 from api.serializers import (FavoriteRecipeSerializer, IngredientSerialize,
@@ -27,6 +27,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerialize
     filter_backends = (filters.DjangoFilterBackend, rest_filters.SearchFilter)
+    filterset_class = IngredientFilter
     filterset_fields = ('name',)
     search_fields = ('^name',)
 

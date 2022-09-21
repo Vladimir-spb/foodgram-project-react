@@ -18,7 +18,9 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ('name', 'color', 'slug')
+        # fields = ('name', 'color', 'slug')
+        fields = '__all__'
+        lookup_field = 'slug'
 
 
 class IngredientSerialize(serializers.ModelSerializer):
@@ -36,9 +38,16 @@ class IngredientsInRecipesSerialize(serializers.ModelSerializer):
     Сериализатор для вывода количества ингредиентов в рецепте.
     """
 
-    id = serializers.ReadOnlyField(source='ingredient.id')
-    name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        source='ingredient.id'
+    )
+    name = serializers.CharField(
+        read_only=True,
+        source='ingredient.name'
+    )
+    measurement_unit = serializers.CharField(
+        read_only=True,
         source='ingredient.measurement_unit'
     )
 
@@ -118,7 +127,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'error': 'Ингредиенты должны быть уникальными'}
                 )
-            lst_unique_ingredients.append(ingredient)
+            lst_unique_ingredients.append('ingredients')
         data['ingredients'] = self.initial_data['ingredients']
         tags_ids = Tag.objects.all().values_list('id', flat=True)
         unexp_tags_ids = [

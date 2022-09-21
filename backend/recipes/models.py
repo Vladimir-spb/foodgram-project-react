@@ -17,8 +17,8 @@ class Ingredient(models.Model):
 
     class Meta:
         ordering = ('name',)
-        verbose_name = 'Ингредиент'
-        verbose_name_plural = 'Ингредиенты'
+        verbose_name = 'Ingredient'
+        verbose_name_plural = 'Ingredients'
 
     def __str__(self):
         return self.name
@@ -44,6 +44,12 @@ class Tag(models.Model):
         ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['slug'],
+                name='unique_slug'
+            )
+        ]
 
     def __str__(self):
         return self.name
