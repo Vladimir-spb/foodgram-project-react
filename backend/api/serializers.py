@@ -1,11 +1,10 @@
 from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
+from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
+                            Recipe, Tag)
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
-
-from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
-                            Recipe, Tag)
 from users.models import Follow, User
 from users.serializers import CustomUserSerializer
 
@@ -137,11 +136,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags_ids = validated_data.pop('tags')
-        recipe = Recipe.objects.bulk_create(
+        return Recipe.objects.bulk_create(
             ingredient=ingredients,
             tag=tags_ids,
         )
-        return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
