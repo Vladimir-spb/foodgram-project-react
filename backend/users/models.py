@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
 from foodgram.settings import ROLES, STATUS_CHOICES
 
 
@@ -21,13 +22,13 @@ class User(AbstractUser):
         max_length=25,
         verbose_name='role',
         choices=ROLES,
-        default='user'
+        default=ROLES[0][0]
     )
     blocked = models.CharField(
         max_length=10,
         verbose_name='Блокировка',
         choices=STATUS_CHOICES,
-        default='Unblock',
+        default=STATUS_CHOICES[1][0],
     )
 
     class Meta:
@@ -38,15 +39,15 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.is_staff or self.is_superuser
+        return self.role == ROLES[-1][0] or self.is_staff or self.is_superuser
 
     @property
     def is_user(self):
-        return self.role == 'user'
+        return self.role == ROLES[0][0]
 
     @property
     def is_blocked(self):
-        return self.blocked == 'Block'
+        return self.blocked == STATUS_CHOICES[0][0]
 
 
 class Follow(models.Model):

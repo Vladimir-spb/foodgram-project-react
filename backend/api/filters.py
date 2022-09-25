@@ -1,5 +1,6 @@
 import django_filters
 from django_filters.rest_framework import filters
+
 from recipes.models import Ingredient, Recipe, Tag
 from users.models import User
 
@@ -42,8 +43,8 @@ class RecipeFilter(django_filters.FilterSet):
         if value:
             return queryset.filter(
                 favorite__user=self.request.user, **{name: value}
-            ).all()
+            )
 
         return queryset.exclude(
             favorite__user=self.request.user, **{name: True}
-        ).all()
+        )

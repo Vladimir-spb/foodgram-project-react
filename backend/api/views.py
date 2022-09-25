@@ -1,13 +1,6 @@
-import datetime as dt
+from datetime import datetime
 
-from api.filters import IngredientFilter, RecipeFilter
-from api.paginations import CustomPageSizePagination
-from api.permissions import AdminOrAuthorOrReadOnly
-from api.serializers import (FavoriteRecipeSerializer, IngredientSerialize,
-                             RecipeSerializer, TagSerializer)
 from django_filters import rest_framework as filters
-from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
-                            Recipe, Tag)
 from rest_framework import filters as rest_filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -15,6 +8,14 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from api.filters import IngredientFilter, RecipeFilter
+from api.paginations import CustomPageSizePagination
+from api.permissions import AdminOrAuthorOrReadOnly
+from api.serializers import (FavoriteRecipeSerializer, IngredientSerialize,
+                             RecipeSerializer, TagSerializer)
+from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
+                            Recipe, Tag)
 from utils.create_pdf_file import create_pdf
 
 
@@ -43,17 +44,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
-        if not self.request.data.get('tags'):
-            raise ValidationError(detail={'tags': ['обязательное поле']})
         serializer.save(
-            author=self.request.user, tags=self.request.data['tags']
+            author=self.request.user,
         )
 
     def perform_update(self, serializer):
-        if not self.request.data.get('tags'):
-            raise ValidationError(detail={'tags': ['обязательное поле']})
         serializer.save(
-            author=self.request.user, tags=self.request.data['tags']
+            author=self.request.user,
         )
 
     @action(
@@ -71,10 +68,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'amount',
         )
 
-        obj_dic = {
+        shopping_cart_context = {
             'file_name': '%s_%s.pdf'
             % (
-                dt.datetime.utcnow().strftime('%Y-%m-%d'),
+                datetime.utcnow().strftime('%Y-%m-%d'),
                 self.request.user.username,
             ),
             'title': 'Список покупок',
@@ -96,10 +93,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             data[name][0] += amount
 
         for idx, (key, value) in enumerate(data.items()):
-            obj_dic['text'].append(
+            shopping_cart_context['text'].append(
                 f'{idx + 1}. {key} - ' f'{value[0]} ' f'{value[1]}'
             )
-        return create_pdf(obj_dic)
+        return create_pdf(shopping_cart_context)
 
     @action(
         methods=['POST', 'DELETE'],
