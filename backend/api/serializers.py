@@ -1,10 +1,11 @@
 from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
-from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
-                            Recipe, Tag)
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
+
+from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
+                            Recipe, Tag)
 from users.models import Follow, User
 from users.serializers import CustomUserSerializer
 
@@ -102,32 +103,34 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data['cooking_time'] < 1:
             raise ValidationError(
-                'Время приготовления не может быть меньше одной минуты!'
+                {'error': 'Время приготовления не может быть меньше 1 минуты!'}
             )
         if len(data['ingredients']) == 0:
             raise ValidationError(
-                'Нужно выбрать хотя бы один ингредиент!'
+                {'error': 'Нужно выбрать хотя бы один ингредиент!'}
             )
         if len(data['tags']) == 0:
             raise ValidationError(
-                'Нужно выбрать хотя бы один тэг!'
+                {'error': 'Нужно выбрать хотя бы один тэг!'}
             )
         if len(data['tags']) > len(set(data['tags'])):
-            raise ValidationError('Теги не могут повторяться!')
+            raise ValidationError({'error': 'Теги не могут повторяться!'})
         lst_unique_ingredients = []
         for ingredient_item in data['ingredients']:
             if ingredient_item['amount'] < 1:
                 raise ValidationError(
-                    'Колличество ингредиента должно быть больше 1'
+                    {'error': 'Колличество ингредиента должно быть больше 1'}
                 )
             lst_unique_ingredients.append(ingredient_item['id'])
         if len(lst_unique_ingredients) > len(set(lst_unique_ingredients)):
-            raise ValidationError('Ингредиенты должны быть уникальными')
+            raise ValidationError(
+                {'error': 'Ингредиенты должны быть уникальными'}
+            )
         tags_list = []
         for tag in data['tags']:
             if tag in tags_list:
                 raise serializers.ValidationError(
-                    'Тэги должны быть уникальными!'
+                    {'error': 'Тэги должны быть уникальными!'}
                 )
             tags_list.append(tag)
         return data
