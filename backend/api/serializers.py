@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
-                            Recipe, Tag)
+                            Recipe, RecipesTags, Tag)
 from users.models import Follow, User
 from users.serializers import CustomUserSerializer
 
@@ -135,15 +135,45 @@ class RecipeSerializer(serializers.ModelSerializer):
             tags_list.append(tag)
         return data
 
+    # @transaction.atomic
+    # def create(self, validated_data):
+    #     ingredients = validated_data.pop('ingredients')
+    #     tags_ids = validated_data.pop('tags')
+    #     IngredientsInRecipes.objects.bulk_create(
+    #         ingredient=ingredients,
+    #         tag=tags_ids,
+    #     )
+    #     return Recipe.objects.create(**validated_data)
+
+    # @transaction.atomic
+    # def update(self, instance, validated_data):
+    #     instance.ingredients.clear()
+    #     instance.tags.clear()
+
+    #     ingredients = validated_data.pop('ingredients')
+    #     tags_ids = validated_data.pop('tags')
+    #     IngredientsInRecipes.objects.bulk_create(
+    #         ingredient=ingredients,
+    #         tag=tags_ids,
+    #     )
+    #     return super().update(instance, validated_data)
+   
     @transaction.atomic
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags_ids = validated_data.pop('tags')
-        IngredientsInRecipes.objects.bulk_create(
-            ingredient=ingredients,
-            tag=tags_ids,
-        )
-        return Recipe.objects.create(**validated_data)
+        recipe = Recipe.objects.create(**validated_data)
+        for ingredient in ingredients:
+            IngredientsInRecipes.objects.update_or_create(
+                recipe=recipe,
+                ingredient=Ingredient.objects.get(id=ingredient['id']),
+                amount=ingredient['amount'],
+            )
+        for tags_id in tags_ids:
+            RecipesTags.objects.update_or_create(
+                recipe=recipe, tag=Tag.objects.get(id=tags_id)
+            )
+        return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -152,10 +182,16 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         ingredients = validated_data.pop('ingredients')
         tags_ids = validated_data.pop('tags')
-        IngredientsInRecipes.objects.bulk_create(
-            ingredient=ingredients,
-            tag=tags_ids,
-        )
+        for ingredient in ingredients:
+            IngredientsInRecipes.objects.create(
+                recipe=instance,
+                ingredient=Ingredient.objects.get(id=ingredient['id']),
+                amount=ingredient['amount'],
+            )
+        for tags_id in tags_ids:
+            RecipesTags.objects.create(
+                recipe=instance, tag=Tag.objects.get(id=tags_id)
+            )
         return super().update(instance, validated_data)
 
 
