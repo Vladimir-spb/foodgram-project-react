@@ -157,7 +157,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     #         tag=tags_ids,
     #     )
     #     return super().update(instance, validated_data)
-   
+
     @transaction.atomic
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
