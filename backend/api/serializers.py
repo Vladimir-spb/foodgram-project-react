@@ -135,11 +135,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             tags_list.append(tag)
         return data
 
-    @transaction.atomic
-    def create(self, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        tags_ids = validated_data.pop('tags')
-        recipe = Recipe.objects.create(**validated_data)
+    def create_ingredient_tags(self, ingredients, recipe, tags_ids):
         IngredientsInRecipes.objects.bulk_create(
             recipe=recipe,
             ingredient=Ingredient.objects.get(id=ingredients['id']),
@@ -148,23 +144,22 @@ class RecipeSerializer(serializers.ModelSerializer):
         RecipesTags.objects.bulk_create(
             recipe=recipe, tag=Tag.objects.get(id=tags_ids)
         )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        tags_ids = validated_data.pop('tags')
+        recipe = Recipe.objects.create(**validated_data)
+        self.create_ingredient_tags(ingredients, recipe, tags_ids)
         return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
         instance.ingredients.clear()
         instance.tags.clear()
-
         ingredients = validated_data.pop('ingredients')
         tags_ids = validated_data.pop('tags')
-        IngredientsInRecipes.objects.bulk_update(
-            recipe=instance,
-            ingredient=Ingredient.objects.get(id=ingredients['id']),
-            amount=ingredients['amount'],
-        )
-        RecipesTags.objects.bulk_update(
-            recipe=instance, tag=Tag.objects.get(id=tags_ids)
-        )
+        self.create_ingredient_tags(ingredients, instance, tags_ids)
         return super().update(instance, validated_data)
 
 

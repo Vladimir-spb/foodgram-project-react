@@ -1,11 +1,11 @@
-from datetime import datetime
+from itertools import count
 
+from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import filters as rest_filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -14,8 +14,8 @@ from api.paginations import CustomPageSizePagination
 from api.permissions import AdminOrAuthorOrReadOnly
 from api.serializers import (FavoriteRecipeSerializer, IngredientSerialize,
                              RecipeSerializer, TagSerializer)
-from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
-                            Recipe, Tag)
+from api.utils import Mixin
+from recipes.models import Ingredient, IngredientsInRecipes, Recipe, Tag
 from utils.create_pdf_file import create_pdf
 
 
@@ -35,7 +35,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('^name',)
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(Mixin, viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (AdminOrAuthorOrReadOnly,)
@@ -65,13 +65,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit',
-            'amount',
+            amount=count('amount')
         )
 
         shopping_cart_context = {
             'file_name': '%s_%s.pdf'
             % (
-                datetime.utcnow().strftime('%Y-%m-%d'),
+                timezone.now().strftime('%Y-%m-%d'),
                 self.request.user.username,
             ),
             'title': 'Список покупок',
@@ -90,7 +90,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             if name not in data:
                 data[name] = [amount, unit]
                 continue
-            data[name][0] += amount
 
         for idx, (key, value) in enumerate(data.items()):
             shopping_cart_context['text'].append(
@@ -105,30 +104,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='(?P<id>[0-9]+)/shopping_cart',
     )
     def shopping_cart(self, request, id):
-        recipe_by_id = get_object_or_404(Recipe, id=id)
-        if request.method == 'POST':
-            favorite_recipe = FavoriteRecipe.objects.get_or_create(
-                recipe=recipe_by_id, user=self.request.user
-            )[0]
-            if favorite_recipe.shopping_cart:
+        c_def = self.get_or_create_in_favoritrecipe(self, request, id)
+        try:
+            if c_def.shopping_cart:
                 raise ValidationError(
                     detail={'error': ['Рецепт уже был добавлен.']}
                 )
-            favorite_recipe.shopping_cart = True
-            favorite_recipe.save()
-            serializer = FavoriteRecipeSerializer(recipe_by_id)
+            c_def.shopping_cart = True
+            c_def.save()
+            serializer = FavoriteRecipeSerializer(self.recipe_by_id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        favorite_recipe = FavoriteRecipe.objects.get(
-            recipe=recipe_by_id, user=self.request.user
-        )
-        if not favorite_recipe.shopping_cart:
-            raise ValidationError(
-                detail={'error': ['Данного рецепта нет в списке покупок.']}
-            )
-        favorite_recipe.shopping_cart = False
-        favorite_recipe.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception:
+            if not c_def.shopping_cart:
+                raise ValidationError(
+                    detail={'error': ['Данного рецепта нет в списке покупок.']}
+                )
+            c_def.shopping_cart = False
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         methods=['POST', 'DELETE'],
@@ -137,27 +129,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='(?P<id>[0-9]+)/favorite',
     )
     def favorite(self, request, id):
-        recipe_by_id = get_object_or_404(Recipe, id=id)
-        if request.method == 'POST':
-            favorite_recipe = FavoriteRecipe.objects.get_or_create(
-                recipe=recipe_by_id, user=self.request.user
-            )[0]
-            if favorite_recipe.favorite:
+        c_def = self.get_or_create_in_favoritrecipe(self, request, id)
+        try:
+            if c_def.favorite:
                 raise ValidationError(
-                    detail={'error': ['Рецепт уже был добавлен в избранные.']}
+                    detail={'error': ['Рецепт уже был добавлен в избранные']}
                 )
-            favorite_recipe.favorite = True
-            favorite_recipe.save()
-            serializer = FavoriteRecipeSerializer(recipe_by_id)
+            c_def.favorite = True
+            c_def.save()
+            serializer = FavoriteRecipeSerializer(self.recipe_by_id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        favorite_recipe = FavoriteRecipe.objects.get(
-            recipe=recipe_by_id, user=self.request.user
-        )
-        if not favorite_recipe.shopping_cart:
-            raise ValidationError(
-                detail={'error': ['Данного рецепта нет в избранных.']}
-            )
-        favorite_recipe.favorite = False
-        favorite_recipe.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception:
+            if not c_def.shopping_cart:
+                raise ValidationError(
+                    detail={'error': ['Данного рецепта нет в избранных.']}
+                )
+            c_def.favorite = False
+            c_def.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
