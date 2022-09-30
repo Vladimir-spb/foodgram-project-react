@@ -9,7 +9,9 @@ services:
       - ./.env
 
   backend:
-    image: martine102/foodgram_backend:latest
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
     restart: always
     volumes:
       - static_value:/app/static/
@@ -20,7 +22,9 @@ services:
       - ./.env
 
   frontend:
-    image: martine102/foodgram_frontend:latest
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
