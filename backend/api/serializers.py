@@ -1,7 +1,6 @@
 from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (FavoriteRecipe, Ingredient, IngredientsInRecipes,
@@ -38,15 +37,15 @@ class IngredientsInRecipesSerialize(serializers.ModelSerializer):
 
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
-        source='ingredient.id'
+        source='ingredient'
     )
     name = serializers.CharField(
         read_only=True,
-        source='ingredient.name'
+        source='ingredient'
     )
     measurement_unit = serializers.CharField(
         read_only=True,
-        source='ingredient.measurement_unit'
+        source='ingredient'
     )
 
     class Meta:
@@ -63,9 +62,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True, default=serializers.CurrentUserDefault()
     )
     image = Base64ImageField()
-    tags = TagSerializer(read_only=True, many=True)
+    tags = TagSerializer(read_only=True,
+                         many=True,
+                         )
     ingredients = IngredientsInRecipesSerialize(
-        many=True
+        many=True, source='ingredient_in_recipe'
     )
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -101,65 +102,65 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe.shopping_cart if recipe else False
 
     def validate(self, data):
-        if data['cooking_time'] < 1:
-            raise ValidationError(
-                {'error': 'Время приготовления не может быть меньше 1 минуты!'}
+        ingredients = self.initial_data.get('ingredients')
+        if not ingredients:
+            raise serializers.ValidationError(
+                {'error': 'Отсутствует информация об ингредиентах'}
             )
-        if len(data['ingredients']) == 0:
-            raise ValidationError(
-                {'error': 'Нужно выбрать хотя бы один ингредиент!'}
-            )
-        if len(data['tags']) == 0:
-            raise ValidationError(
-                {'error': 'Нужно выбрать хотя бы один тэг!'}
-            )
-        if len(data['tags']) > len(set(data['tags'])):
-            raise ValidationError({'error': 'Теги не могут повторяться!'})
         lst_unique_ingredients = []
-        for ingredient_item in data['ingredients']:
-            if ingredient_item['amount'] < 1:
-                raise ValidationError(
-                    {'error': 'Колличество ингредиента должно быть больше 1'}
-                )
-            lst_unique_ingredients.append(ingredient_item['id'])
-        if len(lst_unique_ingredients) > len(set(lst_unique_ingredients)):
-            raise ValidationError(
-                {'error': 'Ингредиенты должны быть уникальными'}
-            )
+        for ingredient in ingredients:
+            ingredient_id = ingredient['id']
+            if ingredient_id in lst_unique_ingredients:
+                raise serializers.ValidationError({
+                    'ingredients': 'Ингредиенты должны быть уникальными!'
+                })
+            lst_unique_ingredients.append(ingredient_id)
+            amount = ingredient['amount']
+            if int(amount) <= 0:
+                raise serializers.ValidationError({
+                    'amount': 'Количество ингредиента должно быть больше нуля!'
+                })
+        tags_ids = self.initial_data.get('tags')
+        if not tags_ids:
+            raise serializers.ValidationError({
+                'tags': 'Нужно выбрать хотя бы один тэг!'
+            })
         tags_list = []
-        for tag in data['tags']:
+        for tag in tags_ids:
             if tag in tags_list:
-                raise serializers.ValidationError(
-                    {'error': 'Тэги должны быть уникальными!'}
-                )
+                raise serializers.ValidationError({
+                    'tags': 'Тэги должны быть уникальными!'
+                })
             tags_list.append(tag)
         return data
 
-    def create_ingredient_tags(self, ingredients, recipe, tags_ids):
-        IngredientsInRecipes.objects.bulk_create(
+    def crete_ingr_tegs(self, recipe, ingredients, tags_ids):
+        ingridient_recipe_list = [IngredientsInRecipes(
             recipe=recipe,
-            ingredient=Ingredient.objects.get(id=ingredients['id']),
-            amount=ingredients['amount'],
-        )
-        RecipesTags.objects.bulk_create(
-            recipe=recipe, tag=Tag.objects.get(id=tags_ids)
-        )
+            ingredient=ingr['ingredient'],
+            amount=ingr['amount']) for ingr in ingredients]
+        IngredientsInRecipes.objects.bulk_create(ingridient_recipe_list)
+        tag_list = [RecipesTags(
+            recipe=recipe,
+            tag=Tag.objects.get(id=tags_id)) for tags_id in tags_ids]
+        RecipesTags.objects.bulk_create(tag_list)
 
     @transaction.atomic
     def create(self, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        tags_ids = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredient_in_recipe')
+        tags_ids = self.initial_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        self.create_ingredient_tags(ingredients, recipe, tags_ids)
+        self.crete_ingr_tegs(recipe, ingredients, tags_ids)
         return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
         instance.ingredients.clear()
         instance.tags.clear()
-        ingredients = validated_data.pop('ingredients')
-        tags_ids = validated_data.pop('tags')
-        self.create_ingredient_tags(ingredients, instance, tags_ids)
+
+        ingredients = validated_data.pop('ingredient_in_recipe')
+        tags_ids = self.initial_data.pop('tags')
+        self.crete_ingr_tegs(instance, ingredients, tags_ids)
         return super().update(instance, validated_data)
 
 

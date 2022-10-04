@@ -186,7 +186,7 @@ class RecipesTags(models.Model):
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='recipe',
+        related_name='tag',
     )
 
     class Meta:

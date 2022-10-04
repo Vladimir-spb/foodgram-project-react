@@ -1,5 +1,5 @@
-from itertools import count
-
+from django.db.models import Sum
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import filters as rest_filters
@@ -14,8 +14,8 @@ from api.paginations import CustomPageSizePagination
 from api.permissions import AdminOrAuthorOrReadOnly
 from api.serializers import (FavoriteRecipeSerializer, IngredientSerialize,
                              RecipeSerializer, TagSerializer)
-from api.utils import Mixin
-from recipes.models import Ingredient, IngredientsInRecipes, Recipe, Tag
+from api.utils import Favoritecreate
+from recipes.models import Ingredient, Recipe, Tag
 from utils.create_pdf_file import create_pdf
 
 
@@ -35,7 +35,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('^name',)
 
 
-class RecipeViewSet(Mixin, viewsets.ModelViewSet):
+class RecipeViewSet(Favoritecreate, viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (AdminOrAuthorOrReadOnly,)
@@ -45,12 +45,12 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            author=self.request.user,
+            author=self.request.user
         )
 
     def perform_update(self, serializer):
         serializer.save(
-            author=self.request.user,
+            author=self.request.user
         )
 
     @action(
@@ -59,13 +59,13 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
         url_path='download_shopping_cart',
     )
     def get_shopping_cart(self, request):
-        shopping_cart_to_download = IngredientsInRecipes.objects.filter(
-            recipe__favorite__user=self.request.user,
-            recipe__favorite__shopping_cart=True,
-        ).values(
-            'ingredient__name',
-            'ingredient__measurement_unit',
-            amount=count('amount')
+        shopping_cart_to_download = Ingredient.objects.filter(
+            ingredient_in_recipe__recipe__favorite__user=self.request.user,
+            ingredient_in_recipe__recipe__favorite__shopping_cart=True,
+        ).annotate(total=Sum('ingredient_in_recipe__amount')).values(
+            'name',
+            'total',
+            'measurement_unit',
         )
 
         shopping_cart_context = {
@@ -83,13 +83,11 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
             'text': [],
         }
         data = {}
-        for idx, item in enumerate(shopping_cart_to_download):
-            name = item['ingredient__name'].capitalize()
-            unit = item['ingredient__measurement_unit']
-            amount = item['amount']
-            if name not in data:
-                data[name] = [amount, unit]
-                continue
+        for item in shopping_cart_to_download:
+            name = item['name'].capitalize()
+            unit = item['measurement_unit']
+            amount = item['total']
+            data[name] = [amount, unit]
 
         for idx, (key, value) in enumerate(data.items()):
             shopping_cart_context['text'].append(
@@ -104,7 +102,7 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
         url_path='(?P<id>[0-9]+)/shopping_cart',
     )
     def shopping_cart(self, request, id):
-        c_def = self.get_or_create_in_favoritrecipe(self, request, id)
+        c_def = self.get_or_create_in_favoritrecipe(id)
         try:
             if c_def.shopping_cart:
                 raise ValidationError(
@@ -112,7 +110,8 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
                 )
             c_def.shopping_cart = True
             c_def.save()
-            serializer = FavoriteRecipeSerializer(self.recipe_by_id)
+            recipe_by_id = get_object_or_404(Recipe, id=id)
+            serializer = FavoriteRecipeSerializer(recipe_by_id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception:
             if not c_def.shopping_cart:
@@ -120,6 +119,7 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
                     detail={'error': ['Данного рецепта нет в списке покупок.']}
                 )
             c_def.shopping_cart = False
+            c_def.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -129,7 +129,8 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
         url_path='(?P<id>[0-9]+)/favorite',
     )
     def favorite(self, request, id):
-        c_def = self.get_or_create_in_favoritrecipe(self, request, id)
+        c_def = self.get_or_create_in_favoritrecipe(id)
+        recipe_by_id = get_object_or_404(Recipe, id=id)
         try:
             if c_def.favorite:
                 raise ValidationError(
@@ -137,10 +138,10 @@ class RecipeViewSet(Mixin, viewsets.ModelViewSet):
                 )
             c_def.favorite = True
             c_def.save()
-            serializer = FavoriteRecipeSerializer(self.recipe_by_id)
+            serializer = FavoriteRecipeSerializer(recipe_by_id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception:
-            if not c_def.shopping_cart:
+            if not c_def.favorite:
                 raise ValidationError(
                     detail={'error': ['Данного рецепта нет в избранных.']}
                 )
