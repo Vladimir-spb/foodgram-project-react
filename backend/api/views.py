@@ -1,5 +1,4 @@
 from django.db.models import Sum
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import filters as rest_filters
@@ -110,8 +109,8 @@ class RecipeViewSet(Favoritecreate, viewsets.ModelViewSet):
                 )
             c_def.shopping_cart = True
             c_def.save()
-            recipe_by_id = get_object_or_404(Recipe, id=id)
-            serializer = FavoriteRecipeSerializer(recipe_by_id)
+            c_def_help = self.get_recipe_by_id(id)
+            serializer = FavoriteRecipeSerializer(c_def_help)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception:
             if not c_def.shopping_cart:
@@ -130,7 +129,6 @@ class RecipeViewSet(Favoritecreate, viewsets.ModelViewSet):
     )
     def favorite(self, request, id):
         c_def = self.get_or_create_in_favoritrecipe(id)
-        recipe_by_id = get_object_or_404(Recipe, id=id)
         try:
             if c_def.favorite:
                 raise ValidationError(
@@ -138,7 +136,8 @@ class RecipeViewSet(Favoritecreate, viewsets.ModelViewSet):
                 )
             c_def.favorite = True
             c_def.save()
-            serializer = FavoriteRecipeSerializer(recipe_by_id)
+            c_def_help = self.get_recipe_by_id(id)
+            serializer = FavoriteRecipeSerializer(c_def_help)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception:
             if not c_def.favorite:
