@@ -11,7 +11,7 @@ from api.paginations import CustomPageSizePagination
 from api.permissions import AdminOrAuthorOrReadOnly
 from api.serializers import (IngredientSerialize, RecipeSerializer,
                              TagSerializer)
-from api.utils import Favoritecreate
+from api.utils import FavoriteCreate
 from recipes.models import FavoriteRecipe, Ingredient, Recipe, Tag
 from utils.create_pdf_file import create_pdf
 
@@ -32,7 +32,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('^name',)
 
 
-class RecipeViewSet(Favoritecreate, viewsets.ModelViewSet):
+class RecipeViewSet(FavoriteCreate, viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (AdminOrAuthorOrReadOnly,)
