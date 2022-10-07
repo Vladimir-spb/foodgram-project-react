@@ -6,7 +6,7 @@ from api.serializers import FavoriteRecipeSerializer
 from recipes.models import FavoriteRecipe, Recipe
 
 
-class Favoritecreate():
+class Favoritecreate:
     def get_recipe_by_id(self, id):
         return get_object_or_404(Recipe, id=id)
 

@@ -134,7 +134,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             tags_list.append(tag)
         return data
 
-    def create_ingredient_tegs_in_recipe(self, recipe, ingredients, tags_ids):
+    def create_ingredient_tags_in_recipe(self, recipe, ingredients, tags_ids):
         ingredient_recipe_list = [IngredientsInRecipes(
             recipe=recipe,
             ingredient=ingredient['ingredient'],
