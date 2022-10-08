@@ -42,7 +42,7 @@ class CustomUserViewSet(UserViewSet):
                     {'errors': 'Вы не можете подписываться на самого себя.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if Follow.objects.filter(
+            elif Follow.objects.filter(
                     author=author, user=self.request.user
             ).exists():
                 return Response(
@@ -59,7 +59,7 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         follow = Follow.objects.filter(
-            author=author, user_id=self.request.user
+            author=author, user=self.request.user
         )
         if not follow.exists():
             return Response(

@@ -41,11 +41,11 @@ class IngredientsInRecipesSerialize(serializers.ModelSerializer):
     )
     name = serializers.CharField(
         read_only=True,
-        source='ingredient'
+        source='ingredient.name'
     )
     measurement_unit = serializers.CharField(
         read_only=True,
-        source='ingredient'
+        source='ingredient.measurement_unit'
     )
 
     class Meta:
@@ -203,8 +203,6 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         recipes = Recipe.objects.filter(author=obj).all()
-        limit = int(self.context['request'].query_params['recipes_limit'])
-        recipes = recipes[:limit]
         return FavoriteRecipeSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj):
