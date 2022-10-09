@@ -203,6 +203,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         recipes = Recipe.objects.filter(author=obj).all()
+        recipes = recipes[:3]
         return FavoriteRecipeSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj):

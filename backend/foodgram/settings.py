@@ -9,6 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.getenv('SECRET_KEY', default='n8!kf4w8p)db$iwhxrq4y5c#*z57vx#i89qdz-9m(yxu#d6bxp')
 
 DEBUG = False
+
 ALLOWED_HOSTS = ['*']
 
 
